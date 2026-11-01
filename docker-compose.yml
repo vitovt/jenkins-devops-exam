@@ -2,9 +2,6 @@ services:
   movie_service:
     build: ./movie-service
     image: "${MOVIE_IMAGE:-jenkins-exam-movie}:${IMAGE_TAG:-manual-test}"
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-    volumes:
-      - ./movie-service/:/app/
     ports:
       - 8001:8000
     environment:
@@ -31,9 +28,6 @@ services:
   cast_service:
     build: ./cast-service
     image: "${CAST_IMAGE:-jenkins-exam-cast}:${IMAGE_TAG:-manual-test}"
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-    volumes:
-      - ./cast-service/:/app/
     ports:
       - 8002:8000
     environment:
