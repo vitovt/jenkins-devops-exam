@@ -105,10 +105,13 @@ pipeline {
                 branch 'master'
             }
             input {
-                message "Deploy ${IMAGE_TAG} to PRODUCTION?"
+                message "Deploy this build to PRODUCTION?"
                 ok 'Deploy'
             }
-            steps { script { deployEnv('prod') } }
+            steps {
+                sh 'echo "Deploying tag $IMAGE_TAG to PROD"'
+                script { deployEnv('prod') }
+            }
         }
     }
 }
