@@ -56,8 +56,15 @@ pipeline {
                 sh '''
                     set -eu
                     docker compose -p cinema-ci up -d --no-build
-                    curl -fsS --retry 30 --retry-delay 3 --retry-connrefused -o /dev/null http://localhost:8080/api/v1/movies/docs
-                    curl -fsS --retry 30 --retry-delay 3 --retry-connrefused -o /dev/null http://localhost:8080/api/v1/casts/docs
+                    for url in http://localhost:8080/api/v1/movies/docs http://localhost:8080/api/v1/casts/docs; do
+                        ok=0
+                        for i in $(seq 1 30); do
+                            if curl -fsS -o /dev/null "$url"; then ok=1; break; fi
+                            sleep 3
+                        done
+                        [ "$ok" = 1 ] || { echo "FAILED: $url"; exit 1; }
+                        echo "OK: $url"
+                    done
                 '''
             }
             post {
