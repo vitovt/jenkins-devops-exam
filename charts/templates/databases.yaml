@@ -1,0 +1,65 @@
+{{- range $name := list "movie" "cast" }}
+{{- $db := index $.Values.postgres $name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-db
+spec:
+  clusterIP: None
+  selector:
+    app: {{ $name }}-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}-db
+spec:
+  serviceName: {{ $name }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}-db
+    spec:
+      containers:
+        - name: postgres
+          image: {{ $.Values.postgres.image | quote }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ $db.user | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: {{ $name }}-db-password
+            - name: POSTGRES_DB
+              value: {{ $db.database | quote }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["sh", "-ec", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ $db.storage | quote }}
+{{- end }}
